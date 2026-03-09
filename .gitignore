@@ -1,0 +1,50 @@
+# ==========================================
+# Keil MDK-ARM Build Artifacts
+# ==========================================
+**/MDK-ARM/Listings/
+**/MDK-ARM/Objects/
+**/MDK-ARM/DebugConfig/
+**/MDK-ARM/*.bak
+**/MDK-ARM/*.dep
+**/MDK-ARM/*.txt
+**/MDK-ARM/*.htm
+**/MDK-ARM/*.lnp
+**/MDK-ARM/*.sct
+**/MDK-ARM/*.map
+**/MDK-ARM/*.lst
+
+# Keil User Specific Files (Layout, Breakpoints)
+**/MDK-ARM/*.uvgui.*
+**/MDK-ARM/*.uvguix.*
+
+# Binary Output Files
+*.axf
+*.elf
+*.hex
+*.bin
+
+# Compiled Object Files
+*.o
+*.d
+*.crf
+
+# ==========================================
+# STM32CubeMX & IDE Cleanup
+# ==========================================
+
+
+# CubeMX temporary and backup files
+*.pbi
+*.browse
+*.pbd
+*.xcl
+
+# ==========================================
+# OS & Misc
+# ==========================================
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.tmp
+*.log
