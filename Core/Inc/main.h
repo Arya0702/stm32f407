@@ -57,20 +57,28 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define MI1602data_readytoreceive_Pin GPIO_PIN_0
+#define MI1602data_readytoreceive_GPIO_Port GPIOD
+#define MI1602data_readytoreceive_EXTI_IRQn EXTI0_IRQn
+#define MI1602_Reset_Pin GPIO_PIN_1
+#define MI1602_Reset_GPIO_Port GPIOD
+#define MI1602_ss_Pin GPIO_PIN_2
+#define MI1602_ss_GPIO_Port GPIOD
 
 /* USER CODE BEGIN Private defines */
-#define MI48_DATA_READY_Pin GPIO_PIN_2
-#define MI48_DATA_READY_GPIO_Port GPIOA
-#define MI48_RST_Pin GPIO_PIN_3
-#define MI48_RST_GPIO_Port GPIOA
-#define MI48_SS_Pin GPIO_PIN_4
-#define MI48_SS_GPIO_Port GPIOA
-#define MI48_SCK_Pin GPIO_PIN_5
-#define MI48_SCK_GPIO_Port GPIOA
-#define MI48_MISO_Pin GPIO_PIN_6
-#define MI48_MISO_GPIO_Port GPIOA
+#define MI48_DATA_READY_Pin GPIO_PIN_0
+#define MI48_DATA_READY_GPIO_Port GPIOD
+#define MI48_RST_Pin GPIO_PIN_1
+#define MI48_RST_GPIO_Port GPIOD
+#define MI48_SS_Pin GPIO_PIN_2
+#define MI48_SS_GPIO_Port GPIOD
+#define MI48_SCK_Pin GPIO_PIN_10
+#define MI48_SCK_GPIO_Port GPIOC
+#define MI48_MISO_Pin GPIO_PIN_11
+#define MI48_MISO_GPIO_Port GPIOC
 #define MI48_MOSI_Pin GPIO_PIN_7
-#define MI48_MOSI_GPIO_Port GPIOA
+#define MI48_MOSI_GPIO_Port GPIO
+/*
 #define MI48_SSA15_Pin GPIO_PIN_15
 #define MI48_SSA15_GPIO_Port GPIOA
 #define MI48_SCKC10_Pin GPIO_PIN_10
@@ -78,7 +86,7 @@ void Error_Handler(void);
 #define MI48_MISOC11_Pin GPIO_PIN_11
 #define MI48_MISOC11_GPIO_Port GPIOC
 #define MI48_MOSIC12_Pin GPIO_PIN_12
-#define MI48_MOSIC12_GPIO_Port GPIOC
+#define MI48_MOSIC12_GPIO_Port GPIOC*/
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus

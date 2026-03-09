@@ -4,6 +4,7 @@
 "project_stm32f407\main.o"
 "project_stm32f407\gpio.o"
 "project_stm32f407\freertos.o"
+"project_stm32f407\dma.o"
 "project_stm32f407\i2c.o"
 "project_stm32f407\spi.o"
 "project_stm32f407\usart.o"

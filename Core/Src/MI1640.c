@@ -18,8 +18,7 @@ void mi48EnbleTemporalFilter(void)
 
 	buf[0] = 0xd0;
 	buf[1] = 0x0b;
-	//buf[1] = 0x03;
-	HAL_I2C_Master_Transmit(&hi2c1, 0x40<<1, buf, 2, HAL_MAX_DELAY);
+	HAL_I2C_Master_Transmit(&hi2c1, 0x40<<1, buf, 2, osWaitForever);
 
 	osDelay(1000);
 }//MI48平滑化处理函数
@@ -31,7 +30,7 @@ void mi48SetFrameRateDivisor(uint8_t framerateDivisor)
 
 	buf[0] = 0xb4;
 	buf[1] = framerateDivisor;
-	HAL_I2C_Master_Transmit(&hi2c1, 0x40<<1, buf, 2, HAL_MAX_DELAY);
+	HAL_I2C_Master_Transmit(&hi2c1, 0x40<<1, buf, 2, osWaitForever);
 }//设置帧率
 
 void mi48StartContinuousCapture(void)
@@ -40,7 +39,7 @@ void mi48StartContinuousCapture(void)
 
 	buf[0] = 0xb1;
 	buf[1] = 0x03;
-	HAL_I2C_Master_Transmit(&hi2c1, 0x40<<1, buf, 2, HAL_MAX_DELAY);
+	HAL_I2C_Master_Transmit(&hi2c1, 0x40<<1, buf, 2, osWaitForever);
 }//设置连续采集模式
 
 

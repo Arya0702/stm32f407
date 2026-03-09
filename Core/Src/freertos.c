@@ -26,6 +26,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "spi.h"
+#include "usart.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -69,10 +70,15 @@ const osThreadAttr_t MI1602_Send_attributes = {
   .stack_size = 1024 * 4,
   .priority = (osPriority_t) osPriorityLow,
 };
-/* Definitions for MI1602Data_ready */
-osSemaphoreId_t MI1602Data_readyHandle;
-const osSemaphoreAttr_t MI1602Data_ready_attributes = {
-  .name = "MI1602Data_ready"
+/* Definitions for MI1602Data_readytosend */
+osSemaphoreId_t MI1602Data_readytosendHandle;
+const osSemaphoreAttr_t MI1602Data_readytosend_attributes = {
+  .name = "MI1602Data_readytosend"
+};
+/* Definitions for MI1602Data_readytoreceive */
+osSemaphoreId_t MI1602Data_readytoreceiveHandle;
+const osSemaphoreAttr_t MI1602Data_readytoreceive_attributes = {
+  .name = "MI1602Data_readytoreceive"
 };
 
 /* Private function prototypes -----------------------------------------------*/
@@ -101,8 +107,11 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE END RTOS_MUTEX */
 
   /* Create the semaphores(s) */
-  /* creation of MI1602Data_ready */
-  MI1602Data_readyHandle = osSemaphoreNew(1, 0, &MI1602Data_ready_attributes);
+  /* creation of MI1602Data_readytosend */
+  MI1602Data_readytosendHandle = osSemaphoreNew(1, 0, &MI1602Data_readytosend_attributes);
+
+  /* creation of MI1602Data_readytoreceive */
+  MI1602Data_readytoreceiveHandle = osSemaphoreNew(1, 1, &MI1602Data_readytoreceive_attributes);
 
   /* USER CODE BEGIN RTOS_SEMAPHORES */
   /* add semaphores, ... */
@@ -167,21 +176,20 @@ void MI1602(void *argument)
   /* Infinite loop */
   for(;;)
   {
-		if(HAL_GPIO_ReadPin(MI48_DATA_READY_GPIO_Port, MI48_DATA_READY_Pin))
+		if(osSemaphoreAcquire(MI1602Data_readytoreceiveHandle,osWaitForever))
 	  {
-		  HAL_GPIO_WritePin(GPIOA, MI48_SSA15_Pin, GPIO_PIN_RESET);
+		  HAL_GPIO_WritePin(GPIOA, MI48_SS_Pin, GPIO_PIN_RESET);
 
-		  if(HAL_SPI_Receive(&hspi3, (uint8_t *)spiBuf, 4960+80, HAL_MAX_DELAY) != HAL_OK)
+		  if(HAL_SPI_Receive(&hspi3, (uint8_t *)spiBuf, (4960+80)*2, HAL_MAX_DELAY) != HAL_OK)
 		  {
-			  HAL_GPIO_WritePin(GPIOA, MI48_SSA15_Pin, GPIO_PIN_SET);
+			  HAL_GPIO_WritePin(GPIOA, MI48_SS_Pin, GPIO_PIN_SET);
 
 		    Error_Handler();
 		  }
 		  else
 		  {
-			  HAL_GPIO_WritePin(GPIOA, MI48_SSA15_Pin, GPIO_PIN_SET);
-				//����
-			  //processThermalData();
+			  HAL_GPIO_WritePin(GPIOA, MI48_SS_Pin, GPIO_PIN_SET);
+				osSemaphoreRelease(MI1602Data_readytosendHandle);
 		  }
 	  }
     osDelay(1);
@@ -202,6 +210,8 @@ void MI1602_SendTask(void *argument)
   /* Infinite loop */
   for(;;)
   {
+		osSemaphoreAcquire(MI1602Data_readytosendHandle,osWaitForever);
+		HAL_UART_Transmit_DMA(&huart4,(uint8_t *) spiBuf,5040*2);
     osDelay(1);
   }
   /* USER CODE END MI1602_SendTask */
@@ -209,6 +219,12 @@ void MI1602_SendTask(void *argument)
 
 /* Private application code --------------------------------------------------*/
 /* USER CODE BEGIN Application */
-
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+  if(GPIO_Pin == MI48_DATA_READY_Pin) 
+  {
+     osSemaphoreRelease(MI1602Data_readytoreceiveHandle);
+  }
+}
 /* USER CODE END Application */
 
