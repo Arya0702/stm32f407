@@ -180,7 +180,7 @@ void MI1602(void *argument)
 	  {
 		  HAL_GPIO_WritePin(GPIOA, MI48_SS_Pin, GPIO_PIN_RESET);
 
-		  if(HAL_SPI_Receive(&hspi3, (uint8_t *)spiBuf, (4960+80)*2, HAL_MAX_DELAY) != HAL_OK)
+		  if(HAL_SPI_Receive(&hspi3, (uint8_t *)spiBuf, 4960+80, HAL_MAX_DELAY) != HAL_OK)
 		  {
 			  HAL_GPIO_WritePin(GPIOA, MI48_SS_Pin, GPIO_PIN_SET);
 
@@ -211,7 +211,7 @@ void MI1602_SendTask(void *argument)
   for(;;)
   {
 		osSemaphoreAcquire(MI1602Data_readytosendHandle,osWaitForever);
-		HAL_UART_Transmit_DMA(&huart4,(uint8_t *) spiBuf,5040*2);
+		HAL_UART_Transmit_DMA(&huart4,(uint8_t *)spiBuf,5040*2);
     osDelay(1);
   }
   /* USER CODE END MI1602_SendTask */
