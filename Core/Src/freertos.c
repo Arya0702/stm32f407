@@ -22,6 +22,8 @@
 #include "task.h"
 #include "main.h"
 #include "cmsis_os.h"
+#include "i2c.h"
+#include "spi.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -45,6 +47,7 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
+uint16_t spiBuf[5040];
 
 /* USER CODE END Variables */
 /* Definitions for defaultTask */
@@ -146,6 +149,23 @@ void MI1602(void *argument)
   /* Infinite loop */
   for(;;)
   {
+		if(HAL_GPIO_ReadPin(MI48_DATA_READY_GPIO_Port, MI48_DATA_READY_Pin))
+	  {
+		  HAL_GPIO_WritePin(GPIOA, MI48_SSA15_Pin, GPIO_PIN_RESET);
+
+		  if(HAL_SPI_Receive(&hspi3, (uint8_t *)spiBuf, 4960+80, HAL_MAX_DELAY) != HAL_OK)
+		  {
+			  HAL_GPIO_WritePin(GPIOA, MI48_SSA15_Pin, GPIO_PIN_SET);
+
+		    Error_Handler();
+		  }
+		  else
+		  {
+			  HAL_GPIO_WritePin(GPIOA, MI48_SSA15_Pin, GPIO_PIN_SET);
+				//´«Êä
+			  //processThermalData();
+		  }
+	  }
     osDelay(1);
   }
   /* USER CODE END MI1602 */

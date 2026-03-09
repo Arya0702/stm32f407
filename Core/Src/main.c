@@ -22,6 +22,7 @@
 #include "i2c.h"
 #include "spi.h"
 #include "gpio.h"
+#include "MI1640.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -93,7 +94,10 @@ int main(void)
   MX_I2C1_Init();
   MX_SPI3_Init();
   /* USER CODE BEGIN 2 */
-
+	mi48Reset();
+  mi48EnbleTemporalFilter();
+  mi48SetFrameRateDivisor(2);
+  mi48StartContinuousCapture();
   /* USER CODE END 2 */
 
   /* Init scheduler */
