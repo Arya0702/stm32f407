@@ -21,12 +21,12 @@
 #include "cmsis_os.h"
 #include "i2c.h"
 #include "spi.h"
+#include "usart.h"
 #include "gpio.h"
-#include "MI1640.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "MI1640.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -93,6 +93,7 @@ int main(void)
   MX_GPIO_Init();
   MX_I2C1_Init();
   MX_SPI3_Init();
+  MX_UART4_Init();
   /* USER CODE BEGIN 2 */
 	mi48Reset();
   mi48EnbleTemporalFilter();

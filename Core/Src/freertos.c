@@ -22,12 +22,10 @@
 #include "task.h"
 #include "main.h"
 #include "cmsis_os.h"
-#include "i2c.h"
-#include "spi.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "spi.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -64,6 +62,18 @@ const osThreadAttr_t MI1602_task_attributes = {
   .stack_size = 128 * 4,
   .priority = (osPriority_t) osPriorityHigh,
 };
+/* Definitions for MI1602_Send */
+osThreadId_t MI1602_SendHandle;
+const osThreadAttr_t MI1602_Send_attributes = {
+  .name = "MI1602_Send",
+  .stack_size = 1024 * 4,
+  .priority = (osPriority_t) osPriorityLow,
+};
+/* Definitions for MI1602Data_ready */
+osSemaphoreId_t MI1602Data_readyHandle;
+const osSemaphoreAttr_t MI1602Data_ready_attributes = {
+  .name = "MI1602Data_ready"
+};
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -72,6 +82,7 @@ const osThreadAttr_t MI1602_task_attributes = {
 
 void StartDefaultTask(void *argument);
 void MI1602(void *argument);
+void MI1602_SendTask(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -88,6 +99,10 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN RTOS_MUTEX */
   /* add mutexes, ... */
   /* USER CODE END RTOS_MUTEX */
+
+  /* Create the semaphores(s) */
+  /* creation of MI1602Data_ready */
+  MI1602Data_readyHandle = osSemaphoreNew(1, 0, &MI1602Data_ready_attributes);
 
   /* USER CODE BEGIN RTOS_SEMAPHORES */
   /* add semaphores, ... */
@@ -107,6 +122,9 @@ void MX_FREERTOS_Init(void) {
 
   /* creation of MI1602_task */
   MI1602_taskHandle = osThreadNew(MI1602, NULL, &MI1602_task_attributes);
+
+  /* creation of MI1602_Send */
+  MI1602_SendHandle = osThreadNew(MI1602_SendTask, NULL, &MI1602_Send_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -162,13 +180,31 @@ void MI1602(void *argument)
 		  else
 		  {
 			  HAL_GPIO_WritePin(GPIOA, MI48_SSA15_Pin, GPIO_PIN_SET);
-				//´«Êä
+				//ï¿½ï¿½ï¿½ï¿½
 			  //processThermalData();
 		  }
 	  }
     osDelay(1);
   }
   /* USER CODE END MI1602 */
+}
+
+/* USER CODE BEGIN Header_MI1602_SendTask */
+/**
+* @brief Function implementing the MI1602_Send thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_MI1602_SendTask */
+void MI1602_SendTask(void *argument)
+{
+  /* USER CODE BEGIN MI1602_SendTask */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1);
+  }
+  /* USER CODE END MI1602_SendTask */
 }
 
 /* Private application code --------------------------------------------------*/
