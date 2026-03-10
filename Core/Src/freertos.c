@@ -62,21 +62,28 @@ osThreadId_t MI1602_taskHandle;
 const osThreadAttr_t MI1602_task_attributes = {
   .name = "MI1602_task",
   .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityHigh,
+  .priority = (osPriority_t) osPriorityRealtime,
 };
 /* Definitions for MI1602_Send */
 osThreadId_t MI1602_SendHandle;
 const osThreadAttr_t MI1602_Send_attributes = {
   .name = "MI1602_Send",
   .stack_size = 1024 * 4,
-  .priority = (osPriority_t) osPriorityLow,
+  .priority = (osPriority_t) osPriorityNormal,
 };
 /* Definitions for Smoke */
 osThreadId_t SmokeHandle;
 const osThreadAttr_t Smoke_attributes = {
   .name = "Smoke",
   .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityLow,
+  .priority = (osPriority_t) osPriorityHigh,
+};
+/* Definitions for Slave */
+osThreadId_t SlaveHandle;
+const osThreadAttr_t Slave_attributes = {
+  .name = "Slave",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityRealtime,
 };
 /* Definitions for UART4_Protect */
 osMutexId_t UART4_ProtectHandle;
@@ -103,6 +110,7 @@ void StartDefaultTask(void *argument);
 void MI1602(void *argument);
 void MI1602_SendTask(void *argument);
 void Smoke_detect(void *argument);
+void Slave_communicate(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -154,6 +162,9 @@ void MX_FREERTOS_Init(void) {
 
   /* creation of Smoke */
   SmokeHandle = osThreadNew(Smoke_detect, NULL, &Smoke_attributes);
+
+  /* creation of Slave */
+  SlaveHandle = osThreadNew(Slave_communicate, NULL, &Slave_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -264,6 +275,25 @@ void Smoke_detect(void *argument)
     osDelay(200);
   }
   /* USER CODE END Smoke_detect */
+}
+
+/* USER CODE BEGIN Header_Slave_communicate */
+/**
+* @brief Function implementing the Slave thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_Slave_communicate */
+void Slave_communicate(void *argument)
+{
+  /* USER CODE BEGIN Slave_communicate */
+  /* Infinite loop */
+  for(;;)
+  {
+    //send x,y,z to slave stm32f407 via UART1
+    osDelay(1);
+  }
+  /* USER CODE END Slave_communicate */
 }
 
 /* Private application code --------------------------------------------------*/

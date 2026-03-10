@@ -96,6 +96,7 @@ int main(void)
   MX_SPI3_Init();
   MX_UART4_Init();
   MX_ADC1_Init();
+  MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
 	mi48Reset();
   mi48EnbleTemporalFilter();
