@@ -57,11 +57,12 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define alert_smoke_Pin GPIO_PIN_7
+#define alert_smoke_GPIO_Port GPIOA
+#define alert_smoke_EXTI_IRQn EXTI9_5_IRQn
 #define MI1602data_readytoreceive_Pin GPIO_PIN_0
 #define MI1602data_readytoreceive_GPIO_Port GPIOD
 #define MI1602data_readytoreceive_EXTI_IRQn EXTI0_IRQn
-#define MI1602_Reset_Pin GPIO_PIN_1
-#define MI1602_Reset_GPIO_Port GPIOD
 #define MI1602_ss_Pin GPIO_PIN_2
 #define MI1602_ss_GPIO_Port GPIOD
 

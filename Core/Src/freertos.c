@@ -27,6 +27,7 @@
 /* USER CODE BEGIN Includes */
 #include "spi.h"
 #include "usart.h"
+#include "adc.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -70,6 +71,13 @@ const osThreadAttr_t MI1602_Send_attributes = {
   .stack_size = 1024 * 4,
   .priority = (osPriority_t) osPriorityLow,
 };
+/* Definitions for Smoke */
+osThreadId_t SmokeHandle;
+const osThreadAttr_t Smoke_attributes = {
+  .name = "Smoke",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityLow,
+};
 /* Definitions for UART4_Protect */
 osMutexId_t UART4_ProtectHandle;
 const osMutexAttr_t UART4_Protect_attributes = {
@@ -94,6 +102,7 @@ const osSemaphoreAttr_t MI1602Data_readytoreceive_attributes = {
 void StartDefaultTask(void *argument);
 void MI1602(void *argument);
 void MI1602_SendTask(void *argument);
+void Smoke_detect(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -142,6 +151,9 @@ void MX_FREERTOS_Init(void) {
 
   /* creation of MI1602_Send */
   MI1602_SendHandle = osThreadNew(MI1602_SendTask, NULL, &MI1602_Send_attributes);
+
+  /* creation of Smoke */
+  SmokeHandle = osThreadNew(Smoke_detect, NULL, &Smoke_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -227,6 +239,33 @@ void MI1602_SendTask(void *argument)
   /* USER CODE END MI1602_SendTask */
 }
 
+/* USER CODE BEGIN Header_Smoke_detect */
+/**
+* @brief Function implementing the Smoke thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_Smoke_detect */
+void Smoke_detect(void *argument)
+{
+  /* USER CODE BEGIN Smoke_detect */
+  /* Infinite loop */
+  for(;;)
+  {
+    HAL_ADC_Start(&hadc1);
+    int adc_val = -1;
+    if (HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY) == HAL_OK) {
+        adc_val = HAL_ADC_GetValue(&hadc1);
+    }
+    HAL_ADC_Stop(&hadc1);
+    osMutexAcquire(UART4_ProtectHandle, osWaitForever);
+    //HAL_UART_Transmit(&huart4, (uint8_t *)&adc_val, 13, HAL_MAX_DELAY);
+    osMutexRelease(UART4_ProtectHandle);
+    osDelay(200);
+  }
+  /* USER CODE END Smoke_detect */
+}
+
 /* Private application code --------------------------------------------------*/
 /* USER CODE BEGIN Application */
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
@@ -234,6 +273,14 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
   if(GPIO_Pin == MI48_DATA_READY_Pin) 
   {
      osSemaphoreRelease(MI1602Data_readytoreceiveHandle);
+  }
+  if(GPIO_Pin == alert_smoke_Pin) 
+  {
+    //send smoke alert message via UART4
+    osMutexAcquire(UART4_ProtectHandle, osWaitForever);
+    char alert_msg[] = "Smoke detected!\r\n";
+    //HAL_UART_Transmit_DMA(&huart4, (uint8_t *)alert_msg, sizeof(alert_msg) - 1);
+    osMutexRelease(UART4_ProtectHandle);
   }
 }
 /* USER CODE END Application */

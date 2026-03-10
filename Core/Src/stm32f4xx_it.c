@@ -55,7 +55,6 @@
 /* USER CODE END 0 */
 
 /* External variables --------------------------------------------------------*/
-extern DMA_HandleTypeDef hdma_uart4_tx;
 extern UART_HandleTypeDef huart4;
 extern TIM_HandleTypeDef htim4;
 
@@ -176,17 +175,17 @@ void EXTI0_IRQHandler(void)
 }
 
 /**
-  * @brief This function handles DMA1 stream4 global interrupt.
+  * @brief This function handles EXTI line[9:5] interrupts.
   */
-void DMA1_Stream4_IRQHandler(void)
+void EXTI9_5_IRQHandler(void)
 {
-  /* USER CODE BEGIN DMA1_Stream4_IRQn 0 */
+  /* USER CODE BEGIN EXTI9_5_IRQn 0 */
 
-  /* USER CODE END DMA1_Stream4_IRQn 0 */
-  HAL_DMA_IRQHandler(&hdma_uart4_tx);
-  /* USER CODE BEGIN DMA1_Stream4_IRQn 1 */
+  /* USER CODE END EXTI9_5_IRQn 0 */
+  HAL_GPIO_EXTI_IRQHandler(alert_smoke_Pin);
+  /* USER CODE BEGIN EXTI9_5_IRQn 1 */
 
-  /* USER CODE END DMA1_Stream4_IRQn 1 */
+  /* USER CODE END EXTI9_5_IRQn 1 */
 }
 
 /**
