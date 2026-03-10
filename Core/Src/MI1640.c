@@ -4,6 +4,15 @@
 #include "MI1640.h"
 
 
+void mi48ConfigFullFrame(void)
+{
+    uint8_t buf[2];
+    buf[0] = 0xb1; 
+    // 0x00 浠ｈ〃锛欶ull-Frame Readout (Bit 2-4 = 0) + 鍖呭惈 Header (Bit 5 = 0)
+    buf[1] = 0x00;
+    HAL_I2C_Master_Transmit(&hi2c1, 0x40<<1, buf, 2, osWaitForever);
+}
+
 void mi48Reset(void)
 {
 	HAL_GPIO_WritePin(MI48_RST_GPIO_Port, MI48_RST_Pin, GPIO_PIN_RESET);
@@ -21,7 +30,7 @@ void mi48EnbleTemporalFilter(void)
 	HAL_I2C_Master_Transmit(&hi2c1, 0x40<<1, buf, 2, osWaitForever);
 
 	osDelay(1000);
-}//MI48平滑化处理函数
+}
 
 
 void mi48SetFrameRateDivisor(uint8_t framerateDivisor)
@@ -31,16 +40,16 @@ void mi48SetFrameRateDivisor(uint8_t framerateDivisor)
 	buf[0] = 0xb4;
 	buf[1] = framerateDivisor;
 	HAL_I2C_Master_Transmit(&hi2c1, 0x40<<1, buf, 2, osWaitForever);
-}//设置帧率
+}
 
 void mi48StartContinuousCapture(void)
 {
 	uint8_t buf[16];
 
 	buf[0] = 0xb1;
-	buf[1] = 0x03;
+	buf[1] = 0x02;
 	HAL_I2C_Master_Transmit(&hi2c1, 0x40<<1, buf, 2, osWaitForever);
-}//设置连续采集模式
+}
 
 
 

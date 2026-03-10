@@ -6,7 +6,7 @@ void mi48Reset(void);
 void mi48EnbleTemporalFilter(void);
 void mi48SetFrameRateDivisor(uint8_t framerateDivisor);
 void mi48StartContinuousCapture(void);
-	
+void mi48ConfigFullFrame(void);
 
 
 #endif

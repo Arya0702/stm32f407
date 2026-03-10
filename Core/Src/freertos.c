@@ -46,7 +46,7 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
-uint16_t spiBuf[5040];
+uint16_t spiBuf[19360];
 
 /* USER CODE END Variables */
 /* Definitions for defaultTask */
@@ -69,6 +69,11 @@ const osThreadAttr_t MI1602_Send_attributes = {
   .name = "MI1602_Send",
   .stack_size = 1024 * 4,
   .priority = (osPriority_t) osPriorityLow,
+};
+/* Definitions for UART4_Protect */
+osMutexId_t UART4_ProtectHandle;
+const osMutexAttr_t UART4_Protect_attributes = {
+  .name = "UART4_Protect"
 };
 /* Definitions for MI1602Data_readytosend */
 osSemaphoreId_t MI1602Data_readytosendHandle;
@@ -101,6 +106,9 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
 
   /* USER CODE END Init */
+  /* Create the mutex(es) */
+  /* creation of UART4_Protect */
+  UART4_ProtectHandle = osMutexNew(&UART4_Protect_attributes);
 
   /* USER CODE BEGIN RTOS_MUTEX */
   /* add mutexes, ... */
@@ -180,7 +188,7 @@ void MI1602(void *argument)
 	  {
 		  HAL_GPIO_WritePin(GPIOA, MI48_SS_Pin, GPIO_PIN_RESET);
 
-		  if(HAL_SPI_Receive(&hspi3, (uint8_t *)spiBuf, 4960+80, HAL_MAX_DELAY) != HAL_OK)
+		  if(HAL_SPI_Receive(&hspi3, (uint8_t *)spiBuf, 19360, HAL_MAX_DELAY) != HAL_OK)
 		  {
 			  HAL_GPIO_WritePin(GPIOA, MI48_SS_Pin, GPIO_PIN_SET);
 
@@ -211,7 +219,9 @@ void MI1602_SendTask(void *argument)
   for(;;)
   {
 		osSemaphoreAcquire(MI1602Data_readytosendHandle,osWaitForever);
-		HAL_UART_Transmit_DMA(&huart4,(uint8_t *)spiBuf,5040*2);
+    osMutexAcquire(UART4_ProtectHandle, osWaitForever);
+		HAL_UART_Transmit_DMA(&huart4,(uint8_t *)spiBuf,19360*2);
+    osMutexRelease(UART4_ProtectHandle);
     osDelay(1);
   }
   /* USER CODE END MI1602_SendTask */

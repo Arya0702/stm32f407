@@ -99,7 +99,7 @@ int main(void)
   /* USER CODE BEGIN 2 */
 	mi48Reset();
   mi48EnbleTemporalFilter();
-  mi48SetFrameRateDivisor(2);
+  mi48SetFrameRateDivisor(1);
   mi48StartContinuousCapture();
   /* USER CODE END 2 */
 
