@@ -273,7 +273,7 @@ void Smoke_detect(void *argument)
     HAL_ADC_Stop(&hadc1);
     //HAL_UART_Transmit(&huart6, (uint8_t *)&adc_val, 13, HAL_MAX_DELAY);--------------------for debug
     osMutexAcquire(UART4_ProtectHandle, osWaitForever);
-    //HAL_UART_Transmit(&huart4, (uint8_t *)&adc_val, 13, HAL_MAX_DELAY);
+    //HAL_UART_Transmit(&huart4, (uint8_t *)&adc_val, 13, HAL_MAX_DELAY);--------------------transmit
     osMutexRelease(UART4_ProtectHandle);
     osDelay(200);
   }
@@ -293,7 +293,7 @@ void Slave_communicate(void *argument)
   /* Infinite loop */
   for(;;)
   {
-    //send x,y,z to slave stm32f407 via UART1
+    //send x,y,z to slave stm32f407 via UART1-------------------transmit
     osDelay(1);
   }
   /* USER CODE END Slave_communicate */
@@ -313,7 +313,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
     osMutexAcquire(UART4_ProtectHandle, osWaitForever);
     char alert_msg[] = "Smoke detected!\r\n";
     //HAL_UART_Transmit(&huart6, (uint8_t *)alert_msg, sizeof(alert_msg) - 1, HAL_MAX_DELAY);---------------------for debug
-    //HAL_UART_Transmit_DMA(&huart4, (uint8_t *)alert_msg, sizeof(alert_msg) - 1);
+    //HAL_UART_Transmit_DMA(&huart4, (uint8_t *)alert_msg, sizeof(alert_msg) - 1);-----------------------transmit
     osMutexRelease(UART4_ProtectHandle);
   }
 }
