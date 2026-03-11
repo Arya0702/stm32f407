@@ -243,6 +243,8 @@ void MI1602_SendTask(void *argument)
   {
 		osSemaphoreAcquire(MI1602Data_readytosendHandle,osWaitForever);
     osMutexAcquire(UART4_ProtectHandle, osWaitForever);
+    /*char send_msg[] = "MI1602 data received!\r\n";
+    HAL_UART_Transmit(&huart6, (uint8_t *)send_msg, sizeof(send_msg) - 1, HAL_MAX_DELAY);--------------------for debug*/
 		HAL_UART_Transmit_DMA(&huart4,(uint8_t *)spiBuf,19360*2);
     osMutexRelease(UART4_ProtectHandle);
     osDelay(1);
@@ -269,6 +271,7 @@ void Smoke_detect(void *argument)
         adc_val = HAL_ADC_GetValue(&hadc1);
     }
     HAL_ADC_Stop(&hadc1);
+    //HAL_UART_Transmit(&huart6, (uint8_t *)&adc_val, 13, HAL_MAX_DELAY);--------------------for debug
     osMutexAcquire(UART4_ProtectHandle, osWaitForever);
     //HAL_UART_Transmit(&huart4, (uint8_t *)&adc_val, 13, HAL_MAX_DELAY);
     osMutexRelease(UART4_ProtectHandle);
@@ -309,6 +312,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
     //send smoke alert message via UART4
     osMutexAcquire(UART4_ProtectHandle, osWaitForever);
     char alert_msg[] = "Smoke detected!\r\n";
+    //HAL_UART_Transmit(&huart6, (uint8_t *)alert_msg, sizeof(alert_msg) - 1, HAL_MAX_DELAY);---------------------for debug
     //HAL_UART_Transmit_DMA(&huart4, (uint8_t *)alert_msg, sizeof(alert_msg) - 1);
     osMutexRelease(UART4_ProtectHandle);
   }
