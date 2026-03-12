@@ -63,15 +63,6 @@ void Error_Handler(void);
 
 /* USER CODE BEGIN Private defines */
 
-/*
-#define MI48_SSA15_Pin GPIO_PIN_15
-#define MI48_SSA15_GPIO_Port GPIOA
-#define MI48_SCKC10_Pin GPIO_PIN_10
-#define MI48_SCKC10_GPIO_Port GPIOC
-#define MI48_MISOC11_Pin GPIO_PIN_11
-#define MI48_MISOC11_GPIO_Port GPIOC
-#define MI48_MOSIC12_Pin GPIO_PIN_12
-#define MI48_MOSIC12_GPIO_Port GPIOC*/
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus

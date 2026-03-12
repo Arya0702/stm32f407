@@ -29,7 +29,9 @@
 #include "adc.h"
 #include "usbh_def.h"
 #include "usb_host.h"
-#include "usbh_cdc.h" // This header declares USBH_CDC_GetLastRxSize
+#include "usbh_cdc.h"
+#include "tim.h"
+#include "MI1640.h"
 
 /* USER CODE END Includes */
 
@@ -65,15 +67,8 @@ const osThreadAttr_t defaultTask_attributes = {
 osThreadId_t MI1602_taskHandle;
 const osThreadAttr_t MI1602_task_attributes = {
   .name = "MI1602_task",
-  .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityRealtime,
-};
-/* Definitions for MI1602_Send */
-osThreadId_t MI1602_SendHandle;
-const osThreadAttr_t MI1602_Send_attributes = {
-  .name = "MI1602_Send",
   .stack_size = 1024 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
+  .priority = (osPriority_t) osPriorityRealtime,
 };
 /* Definitions for Smoke */
 osThreadId_t SmokeHandle;
@@ -89,20 +84,24 @@ const osThreadAttr_t Slave_attributes = {
   .stack_size = 128 * 4,
   .priority = (osPriority_t) osPriorityRealtime,
 };
+/* Definitions for Pwm */
+osThreadId_t PwmHandle;
+const osThreadAttr_t Pwm_attributes = {
+  .name = "Pwm",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityLow,
+};
+/* Definitions for Water_Pump */
+osThreadId_t Water_PumpHandle;
+const osThreadAttr_t Water_Pump_attributes = {
+  .name = "Water_Pump",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityLow,
+};
 /* Definitions for UART4_Protect */
 osMutexId_t UART4_ProtectHandle;
 const osMutexAttr_t UART4_Protect_attributes = {
   .name = "UART4_Protect"
-};
-/* Definitions for MI1602Data_readytosend */
-osSemaphoreId_t MI1602Data_readytosendHandle;
-const osSemaphoreAttr_t MI1602Data_readytosend_attributes = {
-  .name = "MI1602Data_readytosend"
-};
-/* Definitions for MI1602Data_readytoreceive */
-osSemaphoreId_t MI1602Data_readytoreceiveHandle;
-const osSemaphoreAttr_t MI1602Data_readytoreceive_attributes = {
-  .name = "MI1602Data_readytoreceive"
 };
 
 /* Private function prototypes -----------------------------------------------*/
@@ -112,9 +111,10 @@ extern USBH_HandleTypeDef hUsbHostFS;
 
 void StartDefaultTask(void *argument);
 void MI1602(void *argument);
-void MI1602_SendTask(void *argument);
 void Smoke_detect(void *argument);
 void Slave_communicate(void *argument);
+void pwm_task(void *argument);
+void Pump_task(void *argument);
 
 extern void MX_USB_HOST_Init(void);
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
@@ -136,13 +136,6 @@ void MX_FREERTOS_Init(void) {
   /* add mutexes, ... */
   /* USER CODE END RTOS_MUTEX */
 
-  /* Create the semaphores(s) */
-  /* creation of MI1602Data_readytosend */
-  MI1602Data_readytosendHandle = osSemaphoreNew(1, 0, &MI1602Data_readytosend_attributes);
-
-  /* creation of MI1602Data_readytoreceive */
-  MI1602Data_readytoreceiveHandle = osSemaphoreNew(1, 1, &MI1602Data_readytoreceive_attributes);
-
   /* USER CODE BEGIN RTOS_SEMAPHORES */
   /* add semaphores, ... */
   /* USER CODE END RTOS_SEMAPHORES */
@@ -162,14 +155,17 @@ void MX_FREERTOS_Init(void) {
   /* creation of MI1602_task */
   MI1602_taskHandle = osThreadNew(MI1602, NULL, &MI1602_task_attributes);
 
-  /* creation of MI1602_Send */
-  MI1602_SendHandle = osThreadNew(MI1602_SendTask, NULL, &MI1602_Send_attributes);
-
   /* creation of Smoke */
   SmokeHandle = osThreadNew(Smoke_detect, NULL, &Smoke_attributes);
 
   /* creation of Slave */
   SlaveHandle = osThreadNew(Slave_communicate, NULL, &Slave_attributes);
+
+  /* creation of Pwm */
+  PwmHandle = osThreadNew(pwm_task, NULL, &Pwm_attributes);
+
+  /* creation of Water_Pump */
+  Water_PumpHandle = osThreadNew(Pump_task, NULL, &Water_Pump_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -216,37 +212,14 @@ void MI1602(void *argument)
   {
 		USBH_Process(&hUsbHostFS);
     USBH_StatusTypeDef status = USBH_CDC_Receive(&hUsbHostFS, (uint8_t *)rx_Buf, buf_size);
-    int len = USBH_CDC_GetLastRxSize(&hUsbHostFS);
+    
     if (status == USBH_OK) {
         //---------------------------------------transmit
-        HAL_UART_Transmit(&huart6, "receive MI160\r\n", strlen("receive MI1602\r\n"), HAL_MAX_DELAY);//--------------------for debug
+        HAL_UART_Transmit(&huart6, (uint8_t *)"receive MI160\r\n", strlen("receive MI1602\r\n"), HAL_MAX_DELAY);//--------------------for debug
     }
     osDelay(1);
   }
   /* USER CODE END MI1602 */
-}
-
-/* USER CODE BEGIN Header_MI1602_SendTask */
-/**
-* @brief Function implementing the MI1602_Send thread.
-* @param argument: Not used
-* @retval None
-*/
-/* USER CODE END Header_MI1602_SendTask */
-void MI1602_SendTask(void *argument)
-{
-  /* USER CODE BEGIN MI1602_SendTask */
-  /* Infinite loop */
-  for(;;)
-  {
-		osSemaphoreAcquire(MI1602Data_readytosendHandle,osWaitForever);
-    osMutexAcquire(UART4_ProtectHandle, osWaitForever);
-    /*char send_msg[] = "MI1602 data received!\r\n";
-    HAL_UART_Transmit(&huart6, (uint8_t *)send_msg, sizeof(send_msg) - 1, HAL_MAX_DELAY);--------------------for debug*/
-    osMutexRelease(UART4_ProtectHandle);
-    osDelay(1);
-  }
-  /* USER CODE END MI1602_SendTask */
 }
 
 /* USER CODE BEGIN Header_Smoke_detect */
@@ -294,6 +267,57 @@ void Slave_communicate(void *argument)
     osDelay(1);
   }
   /* USER CODE END Slave_communicate */
+}
+
+/* USER CODE BEGIN Header_pwm_task */
+/**
+* @brief Function implementing the Pwm thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_pwm_task */
+void pwm_task(void *argument)
+{
+  /* USER CODE BEGIN pwm_task */
+  /* Infinite loop */
+  for(;;)
+  {
+    if(0)//-------------------------------------------------------get angle
+    {
+      int angle = 90;
+      int pwm = 250+(angle*1000)/270;
+      __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, pwm);
+    }
+    osDelay(1);
+  }
+  /* USER CODE END pwm_task */
+}
+
+/* USER CODE BEGIN Header_Pump_task */
+/**
+* @brief Function implementing the Water_Pump thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_Pump_task */
+void Pump_task(void *argument)
+{
+  /* USER CODE BEGIN Pump_task */
+  /* Infinite loop */
+  for(;;)
+  {
+    int pump_state = 0;
+    if(pump_state)//------------------------------------------get imformation
+    {
+      HAL_GPIO_WritePin(GPIOD, GPIO_PIN_1, GPIO_PIN_SET);
+    }
+    else
+    {
+      HAL_GPIO_WritePin(GPIOD, GPIO_PIN_1, GPIO_PIN_RESET);
+    }
+    osDelay(1);
+  }
+  /* USER CODE END Pump_task */
 }
 
 /* Private application code --------------------------------------------------*/
