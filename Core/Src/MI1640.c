@@ -1,54 +1,30 @@
 #include "main.h"
 #include "cmsis_os.h"
-#include "i2c.h"
 #include "MI1640.h"
+#include "usb_host.h"
+#include "usbh_cdc.h"
 
+extern USBH_HandleTypeDef hUsbHostFS;
 
-void mi48ConfigFullFrame(void)
+void Send_Camera_Command(const char* cmd_content) 
 {
-    uint8_t buf[2];
-    buf[0] = 0xb1; 
-    // 0x00 代表：Full-Frame Readout (Bit 2-4 = 0) + 包含 Header (Bit 5 = 0)
-    buf[1] = 0x00;
-    HAL_I2C_Master_Transmit(&hi2c1, 0x40<<1, buf, 2, osWaitForever);
-}
+    char tx[64];
+    uint16_t checksum = 0;
 
-void mi48Reset(void)
-{
-	HAL_GPIO_WritePin(MI48_RST_GPIO_Port, MI48_RST_Pin, GPIO_PIN_RESET);
-	osDelay(100);
-	HAL_GPIO_WritePin(MI48_RST_GPIO_Port, MI48_RST_Pin, GPIO_PIN_SET);
-	osDelay(1000);
-}
+    for (int i = 0; i < strlen(cmd_content); i++) 
+    {
+        checksum += (uint8_t)cmd_content[i];
+    }
 
-void mi48EnbleTemporalFilter(void)
-{
-	uint8_t buf[16];
+    snprintf(tx, sizeof(tx), "   #%s%04X", cmd_content, checksum);
 
-	buf[0] = 0xd0;
-	buf[1] = 0x0b;
-	HAL_I2C_Master_Transmit(&hi2c1, 0x40<<1, buf, 2, osWaitForever);
-
-	osDelay(1000);
+    USBH_CDC_Transmit(&hUsbHostFS, (uint8_t*)tx, strlen(tx));
 }
 
 
-void mi48SetFrameRateDivisor(uint8_t framerateDivisor)
+void Start_Camera_Stream(void) 
 {
-	uint8_t buf[16];
-
-	buf[0] = 0xb4;
-	buf[1] = framerateDivisor;
-	HAL_I2C_Master_Transmit(&hi2c1, 0x40<<1, buf, 2, osWaitForever);
-}
-
-void mi48StartContinuousCapture(void)
-{
-	uint8_t buf[16];
-
-	buf[0] = 0xb1;
-	buf[1] = 0x02;
-	HAL_I2C_Master_Transmit(&hi2c1, 0x40<<1, buf, 2, osWaitForever);
+    Send_Camera_Command("000CWREGB102");
 }
 
 

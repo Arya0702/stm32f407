@@ -25,9 +25,12 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "spi.h"
 #include "usart.h"
 #include "adc.h"
+#include "usbh_def.h"
+#include "usb_host.h"
+#include "usbh_cdc.h" // This header declares USBH_CDC_GetLastRxSize
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -37,7 +40,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
+#define buf_size 19360 
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -47,7 +50,8 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
-uint16_t spiBuf[19360];
+
+uint16_t rx_Buf[buf_size];
 
 /* USER CODE END Variables */
 /* Definitions for defaultTask */
@@ -103,7 +107,7 @@ const osSemaphoreAttr_t MI1602Data_readytoreceive_attributes = {
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
-
+extern USBH_HandleTypeDef hUsbHostFS;
 /* USER CODE END FunctionPrototypes */
 
 void StartDefaultTask(void *argument);
@@ -112,6 +116,7 @@ void MI1602_SendTask(void *argument);
 void Smoke_detect(void *argument);
 void Slave_communicate(void *argument);
 
+extern void MX_USB_HOST_Init(void);
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
 /**
@@ -185,6 +190,8 @@ void MX_FREERTOS_Init(void) {
 /* USER CODE END Header_StartDefaultTask */
 void StartDefaultTask(void *argument)
 {
+  /* init code for USB_HOST */
+  MX_USB_HOST_Init();
   /* USER CODE BEGIN StartDefaultTask */
   /* Infinite loop */
   for(;;)
@@ -207,22 +214,13 @@ void MI1602(void *argument)
   /* Infinite loop */
   for(;;)
   {
-		if(osSemaphoreAcquire(MI1602Data_readytoreceiveHandle,osWaitForever))
-	  {
-		  HAL_GPIO_WritePin(GPIOA, MI48_SS_Pin, GPIO_PIN_RESET);
-
-		  if(HAL_SPI_Receive(&hspi3, (uint8_t *)spiBuf, 19360, HAL_MAX_DELAY) != HAL_OK)
-		  {
-			  HAL_GPIO_WritePin(GPIOA, MI48_SS_Pin, GPIO_PIN_SET);
-
-		    Error_Handler();
-		  }
-		  else
-		  {
-			  HAL_GPIO_WritePin(GPIOA, MI48_SS_Pin, GPIO_PIN_SET);
-				osSemaphoreRelease(MI1602Data_readytosendHandle);
-		  }
-	  }
+		USBH_Process(&hUsbHostFS);
+    USBH_StatusTypeDef status = USBH_CDC_Receive(&hUsbHostFS, (uint8_t *)rx_Buf, buf_size);
+    int len = USBH_CDC_GetLastRxSize(&hUsbHostFS);
+    if (status == USBH_OK) {
+        //---------------------------------------transmit
+        HAL_UART_Transmit(&huart6, "receive MI160\r\n", strlen("receive MI1602\r\n"), HAL_MAX_DELAY);//--------------------for debug
+    }
     osDelay(1);
   }
   /* USER CODE END MI1602 */
@@ -245,7 +243,6 @@ void MI1602_SendTask(void *argument)
     osMutexAcquire(UART4_ProtectHandle, osWaitForever);
     /*char send_msg[] = "MI1602 data received!\r\n";
     HAL_UART_Transmit(&huart6, (uint8_t *)send_msg, sizeof(send_msg) - 1, HAL_MAX_DELAY);--------------------for debug*/
-		HAL_UART_Transmit_DMA(&huart4,(uint8_t *)spiBuf,19360*2);//------------------------------transmit to orange pi
     osMutexRelease(UART4_ProtectHandle);
     osDelay(1);
   }
@@ -271,7 +268,7 @@ void Smoke_detect(void *argument)
         adc_val = HAL_ADC_GetValue(&hadc1);
     }
     HAL_ADC_Stop(&hadc1);
-    //HAL_UART_Transmit(&huart6, (uint8_t *)&adc_val, 13, HAL_MAX_DELAY);--------------------for debug
+    HAL_UART_Transmit(&huart6, (uint8_t *)&adc_val, 13, HAL_MAX_DELAY);//--------------------for debug
     osMutexAcquire(UART4_ProtectHandle, osWaitForever);
     //HAL_UART_Transmit(&huart4, (uint8_t *)&adc_val, 13, HAL_MAX_DELAY);--------------------transmit to orange pi
     osMutexRelease(UART4_ProtectHandle);
@@ -303,19 +300,33 @@ void Slave_communicate(void *argument)
 /* USER CODE BEGIN Application */
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
-  if(GPIO_Pin == MI48_DATA_READY_Pin) 
-  {
-     osSemaphoreRelease(MI1602Data_readytoreceiveHandle);
-  }
   if(GPIO_Pin == alert_smoke_Pin) 
   {
     //send smoke alert message via UART4
     osMutexAcquire(UART4_ProtectHandle, osWaitForever);
     char alert_msg[] = "Smoke detected!\r\n";
-    //HAL_UART_Transmit(&huart6, (uint8_t *)alert_msg, sizeof(alert_msg) - 1, HAL_MAX_DELAY);---------------------for debug
+    HAL_UART_Transmit(&huart6, (uint8_t *)alert_msg, sizeof(alert_msg) - 1, HAL_MAX_DELAY);//---------------------for debug
     //HAL_UART_Transmit_DMA(&huart4, (uint8_t *)alert_msg, sizeof(alert_msg) - 1);-----------------------transmit to orange pi
     osMutexRelease(UART4_ProtectHandle);
   }
+}
+
+void USBH_CDC_ReceiveCallback(USBH_HandleTypeDef *phost)
+{
+    if (phost == &hUsbHostFS)
+    {
+      
+        // 1. 获取实际收到的字节数
+        //int len = USBH_CDC_GetLastRxSize(phost);
+
+        
+        // 2. 在这里处理你的数据 (比如存入环形缓冲区或打印)
+        // Process_My_Data(rx_buffer, len);
+        
+        // 3. 【最重要】重新开启下一次接收
+        // 如果不调这一句，STM32 就只会接收一次，然后永远沉默
+        USBH_CDC_Receive(phost, (uint8_t *)rx_Buf, 64);
+    }
 }
 /* USER CODE END Application */
 

@@ -60,25 +60,9 @@ void Error_Handler(void);
 #define alert_smoke_Pin GPIO_PIN_7
 #define alert_smoke_GPIO_Port GPIOA
 #define alert_smoke_EXTI_IRQn EXTI9_5_IRQn
-#define MI1602data_readytoreceive_Pin GPIO_PIN_0
-#define MI1602data_readytoreceive_GPIO_Port GPIOD
-#define MI1602data_readytoreceive_EXTI_IRQn EXTI0_IRQn
-#define MI1602_ss_Pin GPIO_PIN_2
-#define MI1602_ss_GPIO_Port GPIOD
 
 /* USER CODE BEGIN Private defines */
-#define MI48_DATA_READY_Pin GPIO_PIN_0
-#define MI48_DATA_READY_GPIO_Port GPIOD
-#define MI48_RST_Pin GPIO_PIN_1
-#define MI48_RST_GPIO_Port GPIOD
-#define MI48_SS_Pin GPIO_PIN_2
-#define MI48_SS_GPIO_Port GPIOD
-#define MI48_SCK_Pin GPIO_PIN_10
-#define MI48_SCK_GPIO_Port GPIOC
-#define MI48_MISO_Pin GPIO_PIN_11
-#define MI48_MISO_GPIO_Port GPIOC
-#define MI48_MOSI_Pin GPIO_PIN_7
-#define MI48_MOSI_GPIO_Port GPIO
+
 /*
 #define MI48_SSA15_Pin GPIO_PIN_15
 #define MI48_SSA15_GPIO_Port GPIOA
