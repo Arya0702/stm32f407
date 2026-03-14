@@ -212,7 +212,7 @@ void MI1602(void *argument)
         //---------------------------------------transmit
         HAL_UART_Transmit(&huart6, (uint8_t *)"receive MI160\r\n", strlen("receive MI1602\r\n"), HAL_MAX_DELAY);//--------------------for debug
     }*/
-    osDelay(1);
+    osDelay(10);
   }
   /* USER CODE END MI1602 */
 }
@@ -278,14 +278,18 @@ void Slave_communicate(void *argument)
 void pwm_task(void *argument)
 {
   /* USER CODE BEGIN pwm_task */
+  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
   /* Infinite loop */
   for(;;)
   {
-    if(0)//-------------------------------------------------------get angle
+    if(1)//-------------------------------------------------------get angle
     {
-      int angle = 90;
-      int pwm = 250+(angle*1000)/270;
-      __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, pwm);
+      int angle_x = 90;
+      int angle_z = 90;
+      int pwm_x = 50+(angle_x*200)/270;
+      int pwm_z = 50+(angle_z*200)/180;
+      __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, pwm_x);
+      __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, pwm_z);
     }
     osDelay(1);
   }
