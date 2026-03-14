@@ -32,13 +32,9 @@ extern "C" {
 
 /* USER CODE END Includes */
 
-/* UART 分配: UART4->香橙派, USART1->底层STM32, USART2->空置, USART6->调试 */
-
 extern UART_HandleTypeDef huart4;
 
 extern UART_HandleTypeDef huart1;
-
-extern UART_HandleTypeDef huart2;
 
 extern UART_HandleTypeDef huart6;
 
@@ -48,7 +44,6 @@ extern UART_HandleTypeDef huart6;
 
 void MX_UART4_Init(void);
 void MX_USART1_UART_Init(void);
-void MX_USART2_UART_Init(void);
 void MX_USART6_UART_Init(void);
 
 /* USER CODE BEGIN Prototypes */

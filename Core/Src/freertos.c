@@ -182,16 +182,6 @@ void MX_FREERTOS_Init(void) {
   * @retval None
   */
 /* USER CODE END Header_StartDefaultTask */
-/* 订阅节点示例：收到香橙派下发的数据时在中断上下文调用，建议只做拷贝或投递到队列 */
-static void MicroROS_SubCallback_Example(uint8_t topic_id, const uint8_t *data, uint16_t len)
-{
-  (void)len;
-  if (topic_id == MICROROS_TOPIC_CMD_FROM_PI && data != NULL)
-  {
-    /* 例如：解析 data，控制从机或本地逻辑；或 xQueueSendFromISR 投递到任务处理 */
-  }
-}
-
 void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN StartDefaultTask */
