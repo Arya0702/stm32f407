@@ -23,7 +23,7 @@
 #include "dma.h"
 #include "tim.h"
 #include "usart.h"
-#include "usb_host.h"
+#include "usb_otg.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
@@ -100,8 +100,8 @@ int main(void)
   MX_USART6_UART_Init();
   MX_TIM3_Init();
   MX_USART2_UART_Init();
+  MX_USB_OTG_FS_HCD_Init();
   /* USER CODE BEGIN 2 */
-	Start_Camera_Stream();
   /* USER CODE END 2 */
 
   /* Init scheduler */
