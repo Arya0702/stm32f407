@@ -29,6 +29,7 @@
 #include "adc.h"
 #include "tim.h"
 #include "MI1640.h"
+#include "microros_uart4.h"
 
 /* USER CODE END Includes */
 
@@ -184,6 +185,10 @@ void MX_FREERTOS_Init(void) {
 void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN StartDefaultTask */
+  /* UART4 与香橙派 Micro-ROS 通讯：启动接收并注册订阅回调 */
+  MicroROS_UART4_Init();
+  MicroROS_RegisterSubCallback(MicroROS_SubCallback_Example);
+
   /* Infinite loop */
   for(;;)
   {
@@ -237,13 +242,14 @@ void Smoke_detect(void *argument)
         adc_val = HAL_ADC_GetValue(&hadc1);
     }
     HAL_ADC_Stop(&hadc1);
+
     HAL_UART_Transmit(&huart6, (uint8_t*)adc_val, 4, HAL_MAX_DELAY);
     if(alert==1)
     {
       HAL_UART_Transmit(&huart6, (uint8_t*)"Smoke Alert!\r\n", 14, HAL_MAX_DELAY);
       alert = 0;
     }
-      
+    (void)MicroROS_Publish(MICROROS_TOPIC_SENSOR_TO_PI, (const uint8_t *)&adc_val, sizeof(adc_val));
     osDelay(200);
   }
   /* USER CODE END Smoke_detect */
@@ -338,7 +344,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
     {
       alert = 1;
     }
-    
+    (void)MicroROS_Publish(MICROROS_TOPIC_ALERT_TO_PI, (const uint8_t *)alert_msg, sizeof(alert_msg) - 1);
   }
 }
 
