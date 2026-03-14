@@ -32,6 +32,8 @@ extern "C" {
 
 /* USER CODE END Includes */
 
+/* UART 分配: UART4->香橙派, USART1->底层STM32, USART2->空置, USART6->调试 */
+
 extern UART_HandleTypeDef huart4;
 
 extern UART_HandleTypeDef huart1;
