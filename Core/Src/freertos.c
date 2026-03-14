@@ -32,6 +32,7 @@
 #include "usbh_cdc.h"
 #include "tim.h"
 #include "MI1640.h"
+#include "microros_uart4.h"
 
 /* USER CODE END Includes */
 
@@ -184,11 +185,25 @@ void MX_FREERTOS_Init(void) {
   * @retval None
   */
 /* USER CODE END Header_StartDefaultTask */
+/* 订阅节点示例：收到香橙派下发的数据时在中断上下文调用，建议只做拷贝或投递到队列 */
+static void MicroROS_SubCallback_Example(uint8_t topic_id, const uint8_t *data, uint16_t len)
+{
+  (void)len;
+  if (topic_id == MICROROS_TOPIC_CMD_FROM_PI && data != NULL)
+  {
+    /* 例如：解析 data，控制从机或本地逻辑；或 xQueueSendFromISR 投递到任务处理 */
+  }
+}
+
 void StartDefaultTask(void *argument)
 {
   /* init code for USB_HOST */
   MX_USB_HOST_Init();
   /* USER CODE BEGIN StartDefaultTask */
+  /* UART4 与香橙派 Micro-ROS 通讯：启动接收并注册订阅回调 */
+  MicroROS_UART4_Init();
+  MicroROS_RegisterSubCallback(MicroROS_SubCallback_Example);
+
   /* Infinite loop */
   for(;;)
   {
@@ -242,9 +257,8 @@ void Smoke_detect(void *argument)
     }
     HAL_ADC_Stop(&hadc1);
     HAL_UART_Transmit(&huart6, (uint8_t *)&adc_val, 13, HAL_MAX_DELAY);//--------------------for debug
-    osMutexAcquire(UART4_ProtectHandle, osWaitForever);
-    //HAL_UART_Transmit(&huart4, (uint8_t *)&adc_val, 13, HAL_MAX_DELAY);--------------------transmit to orange pi
-    osMutexRelease(UART4_ProtectHandle);
+    /* 发送节点示例：发布传感器数据到香橙派 */
+    (void)MicroROS_Publish(MICROROS_TOPIC_SENSOR_TO_PI, (const uint8_t *)&adc_val, sizeof(adc_val));
     osDelay(200);
   }
   /* USER CODE END Smoke_detect */
@@ -326,12 +340,10 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
   if(GPIO_Pin == alert_smoke_Pin) 
   {
-    //send smoke alert message via UART4
-    osMutexAcquire(UART4_ProtectHandle, osWaitForever);
     char alert_msg[] = "Smoke detected!\r\n";
     HAL_UART_Transmit(&huart6, (uint8_t *)alert_msg, sizeof(alert_msg) - 1, HAL_MAX_DELAY);//---------------------for debug
-    //HAL_UART_Transmit_DMA(&huart4, (uint8_t *)alert_msg, sizeof(alert_msg) - 1);-----------------------transmit to orange pi
-    osMutexRelease(UART4_ProtectHandle);
+    /* 发送节点示例：发布告警到香橙派 Micro-ROS */
+    (void)MicroROS_Publish(MICROROS_TOPIC_ALERT_TO_PI, (const uint8_t *)alert_msg, sizeof(alert_msg) - 1);
   }
 }
 
