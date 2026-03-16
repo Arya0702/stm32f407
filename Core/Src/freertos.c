@@ -64,7 +64,7 @@ osThreadId_t defaultTaskHandle;
 const osThreadAttr_t defaultTask_attributes = {
   .name = "defaultTask",
   .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
+  .priority = (osPriority_t) osPriorityRealtime7,
 };
 /* Definitions for MI1602_task */
 osThreadId_t MI1602_taskHandle;
@@ -215,11 +215,19 @@ void MI1602(void *argument)
 {
   /* USER CODE BEGIN MI1602 */
   uint8_t is_camera_started = 0;
-
+  osDelay(1000);
+  //static ApplicationTypeDef last_state = APPLICATION_IDLE;
   /* Infinite loop */
   for(;;)
   {
     USBH_Process(&hUsbHostFS);
+   
+    /*if(Appli_state != last_state)
+    {
+       HAL_UART_Transmit(&huart6, (uint8_t *)&a, 4, HAL_MAX_DELAY);
+       last_state = Appli_state;
+    }*/
+
     if(Appli_state == APPLICATION_READY )//-------------error place
     {
       if(is_camera_started==0)
@@ -229,7 +237,7 @@ void MI1602(void *argument)
         osDelay(500);
         USBH_CDC_Receive(&hUsbHostFS, (uint8_t *)rx_Buf, buf_size);
       }
-      HAL_UART_Transmit(&huart6, (uint8_t *)"receive MI160\r\n", strlen("receive MI1602\r\n"), HAL_MAX_DELAY);//--------------------for debug
+      //HAL_UART_Transmit(&huart6, (uint8_t *)"receive MI160\r\n", strlen("receive MI1602\r\n"), HAL_MAX_DELAY);//--------------------for debug
       if(rx_ready==1)
       {
         rx_ready = 0;
@@ -238,6 +246,10 @@ void MI1602(void *argument)
         USBH_CDC_Receive(&hUsbHostFS, (uint8_t *)rx_Buf, buf_size);
       }
       
+    }
+    if(Appli_state == APPLICATION_DISCONNECT)
+    {
+      is_camera_started = 0;
     }
     osDelay(10);
         
@@ -260,16 +272,16 @@ void Smoke_detect(void *argument)
   {
     //HAL_UART_Transmit(&huart6, (uint8_t*)"UART6 OK\r\n", 10, 100);
     HAL_ADC_Start(&hadc1);
-    volatile int adc_val = -1;
+    volatile int adc_val = 1;
     if (HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY) == HAL_OK) {
         adc_val = HAL_ADC_GetValue(&hadc1);
     }
     HAL_ADC_Stop(&hadc1);
 
-    //HAL_UART_Transmit(&huart6, (uint8_t*)adc_val, 4, HAL_MAX_DELAY);
+    //HAL_UART_Transmit(&huart6, (uint8_t*)&adc_val, 4, HAL_MAX_DELAY);
     if(alert==1)
     {
-      //HAL_UART_Transmit(&huart6, (uint8_t*)"Smoke Alert!\r\n", 14, HAL_MAX_DELAY);
+      HAL_UART_Transmit(&huart6, (uint8_t*)"Smoke Alert!\r\n", 14, HAL_MAX_DELAY);
       alert = 0;
     }
     //(void)MicroROS_Publish(MICROROS_TOPIC_SENSOR_TO_PI, (const uint8_t *)&adc_val, sizeof(adc_val));
@@ -291,7 +303,7 @@ void Slave_communicate(void *argument)
   /* Infinite loop */
   for(;;)
   {
-    //send x,y,z to slave stm32f407 via UART1-------------------transmit to stm32f407
+    //git & send x,y,z to slave stm32f407 via UART1-------------------transmit to stm32f407
     osDelay(1);
   }
   /* USER CODE END Slave_communicate */
