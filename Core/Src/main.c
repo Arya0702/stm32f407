@@ -23,12 +23,11 @@
 #include "dma.h"
 #include "tim.h"
 #include "usart.h"
-#include "usb_host.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "MI1640.h"
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/

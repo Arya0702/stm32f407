@@ -28,11 +28,8 @@
 #include "usart.h"
 #include "adc.h"
 #include "tim.h"
-#include "MI1640.h"
 #include "microros_uart4.h"
-#include "usb_host.h"
-#include "usbh_cdc.h"
-#include "usbh_core.h"
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -42,7 +39,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define buf_size 39698
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -52,11 +49,9 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
-extern USBH_HandleTypeDef hUsbHostFS;
-extern ApplicationTypeDef Appli_state;
-uint8_t rx_Buf[buf_size];
+volatile uint8_t pump_state = 0;
 volatile int rx_ready = 0;
-int alert = 0;
+volatile int alert = 0;
 
 /* USER CODE END Variables */
 /* Definitions for defaultTask */
@@ -64,13 +59,6 @@ osThreadId_t defaultTaskHandle;
 const osThreadAttr_t defaultTask_attributes = {
   .name = "defaultTask",
   .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityRealtime7,
-};
-/* Definitions for MI1602_task */
-osThreadId_t MI1602_taskHandle;
-const osThreadAttr_t MI1602_task_attributes = {
-  .name = "MI1602_task",
-  .stack_size = 2048 * 4,
   .priority = (osPriority_t) osPriorityRealtime,
 };
 /* Definitions for Smoke */
@@ -78,21 +66,21 @@ osThreadId_t SmokeHandle;
 const osThreadAttr_t Smoke_attributes = {
   .name = "Smoke",
   .stack_size = 256 * 4,
-  .priority = (osPriority_t) osPriorityHigh,
+  .priority = (osPriority_t) osPriorityAboveNormal,
 };
 /* Definitions for Slave */
 osThreadId_t SlaveHandle;
 const osThreadAttr_t Slave_attributes = {
   .name = "Slave",
   .stack_size = 256 * 4,
-  .priority = (osPriority_t) osPriorityRealtime,
+  .priority = (osPriority_t) osPriorityAboveNormal,
 };
 /* Definitions for Pwm */
 osThreadId_t PwmHandle;
 const osThreadAttr_t Pwm_attributes = {
   .name = "Pwm",
   .stack_size = 256 * 4,
-  .priority = (osPriority_t) osPriorityLow,
+  .priority = (osPriority_t) osPriorityNormal,
 };
 /* Definitions for Water_Pump */
 osThreadId_t Water_PumpHandle;
@@ -113,13 +101,11 @@ const osMutexAttr_t UART4_Protect_attributes = {
 /* USER CODE END FunctionPrototypes */
 
 void StartDefaultTask(void *argument);
-void MI1602(void *argument);
 void Smoke_detect(void *argument);
 void Slave_communicate(void *argument);
 void pwm_task(void *argument);
 void Pump_task(void *argument);
 
-extern void MX_USB_HOST_Init(void);
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
 /**
@@ -155,9 +141,6 @@ void MX_FREERTOS_Init(void) {
   /* creation of defaultTask */
   defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
-  /* creation of MI1602_task */
-  MI1602_taskHandle = osThreadNew(MI1602, NULL, &MI1602_task_attributes);
-
   /* creation of Smoke */
   SmokeHandle = osThreadNew(Smoke_detect, NULL, &Smoke_attributes);
 
@@ -189,8 +172,6 @@ void MX_FREERTOS_Init(void) {
 /* USER CODE END Header_StartDefaultTask */
 void StartDefaultTask(void *argument)
 {
-  /* init code for USB_HOST */
-  MX_USB_HOST_Init();
   /* USER CODE BEGIN StartDefaultTask */
   /* UART4 与香橙派 Micro-ROS 通讯：启动接收并注册订阅回调 */
   //MicroROS_UART4_Init();
@@ -202,59 +183,6 @@ void StartDefaultTask(void *argument)
     osDelay(1);
   }
   /* USER CODE END StartDefaultTask */
-}
-
-/* USER CODE BEGIN Header_MI1602 */
-/**
-* @brief Function implementing the MI1602_task thread.
-* @param argument: Not used
-* @retval None
-*/
-/* USER CODE END Header_MI1602 */
-void MI1602(void *argument)
-{
-  /* USER CODE BEGIN MI1602 */
-  uint8_t is_camera_started = 0;
-  osDelay(1000);
-  //static ApplicationTypeDef last_state = APPLICATION_IDLE;
-  /* Infinite loop */
-  for(;;)
-  {
-    USBH_Process(&hUsbHostFS);
-   
-    /*if(Appli_state != last_state)
-    {
-       HAL_UART_Transmit(&huart6, (uint8_t *)&a, 4, HAL_MAX_DELAY);
-       last_state = Appli_state;
-    }*/
-
-    if(Appli_state == APPLICATION_READY )//-------------error place
-    {
-      if(is_camera_started==0)
-      {
-        Start_Camera_Stream();
-        is_camera_started = 1;
-        osDelay(500);
-        USBH_CDC_Receive(&hUsbHostFS, (uint8_t *)rx_Buf, buf_size);
-      }
-      //HAL_UART_Transmit(&huart6, (uint8_t *)"receive MI160\r\n", strlen("receive MI1602\r\n"), HAL_MAX_DELAY);//--------------------for debug
-      if(rx_ready==1)
-      {
-        rx_ready = 0;
-        HAL_UART_Transmit(&huart6, (uint8_t *)"receive MI160\r\n", strlen("receive MI1602\r\n"), HAL_MAX_DELAY);//--------------------for debug
-    
-        USBH_CDC_Receive(&hUsbHostFS, (uint8_t *)rx_Buf, buf_size);
-      }
-      
-    }
-    if(Appli_state == APPLICATION_DISCONNECT)
-    {
-      is_camera_started = 0;
-    }
-    osDelay(10);
-        
-  }
-  /* USER CODE END MI1602 */
 }
 
 /* USER CODE BEGIN Header_Smoke_detect */
@@ -272,7 +200,7 @@ void Smoke_detect(void *argument)
   {
     //HAL_UART_Transmit(&huart6, (uint8_t*)"UART6 OK\r\n", 10, 100);
     HAL_ADC_Start(&hadc1);
-    volatile int adc_val = 1;
+    volatile uint32_t adc_val = 0;
     if (HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY) == HAL_OK) {
         adc_val = HAL_ADC_GetValue(&hadc1);
     }
@@ -281,7 +209,7 @@ void Smoke_detect(void *argument)
     //HAL_UART_Transmit(&huart6, (uint8_t*)&adc_val, 4, HAL_MAX_DELAY);
     if(alert==1)
     {
-      HAL_UART_Transmit(&huart6, (uint8_t*)"Smoke Alert!\r\n", 14, HAL_MAX_DELAY);
+      //HAL_UART_Transmit(&huart6, (uint8_t*)"Smoke Alert!\r\n", 14, HAL_MAX_DELAY);
       alert = 0;
     }
     //(void)MicroROS_Publish(MICROROS_TOPIC_SENSOR_TO_PI, (const uint8_t *)&adc_val, sizeof(adc_val));
@@ -320,6 +248,7 @@ void pwm_task(void *argument)
 {
   /* USER CODE BEGIN pwm_task */
   HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
+  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2);
   /* Infinite loop */
   for(;;)
   {
@@ -350,7 +279,7 @@ void Pump_task(void *argument)
   /* Infinite loop */
   for(;;)
   {
-    int pump_state = 0;
+    
     if(pump_state)//------------------------------------------get imformation
     {
       HAL_GPIO_WritePin(GPIOD, GPIO_PIN_1, GPIO_PIN_SET);
@@ -370,7 +299,6 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
   if(GPIO_Pin == alert_smoke_Pin) 
   {
-    //send smoke alert message via UART4
     if(HAL_GPIO_ReadPin(GPIOA, alert_smoke_Pin) == GPIO_PIN_SET) 
     {
       alert = 0;
@@ -383,22 +311,6 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
   }
 }
 
-void USBH_CDC_ReceiveCallback(USBH_HandleTypeDef *phost)
-{
-    if (phost == &hUsbHostFS)
-    {
-      
-        // 1. 获取实际收到的字节数
-        //int len = USBH_CDC_GetLastRxSize(phost);
 
-        
-        // 2. 在这里处理你的数据 (比如存入环形缓冲区或打印)
-        // Process_My_Data(rx_buffer, len);
-        
-        // 3. 【最重要】重新开启下一次接收
-        // 如果不调这一句，STM32 就只会接收一次，然后永远沉默
-        rx_ready = 1;
-    }
-}
 /* USER CODE END Application */
 
