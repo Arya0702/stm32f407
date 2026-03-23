@@ -23,9 +23,9 @@
 /* USER CODE BEGIN 0 */
 /**
  * UART 分配:
- *   UART4  -> 香橙派 (Orange Pi),  PA0(TX)/PA1(RX), 921600
+ *   UART4  -> 香橙派 (Orange Pi),  PA0(TX)/PA1(RX), 115200
  *   USART1 -> 底层 STM32,         PA9(TX)/PA10(RX), 115200
- *   USART2 -> 空置 (reserved),    PA2(TX)/PA3(RX), 115200
+ *   USART2 -> RosRobot 里程计输入 (PC10/11 UART4 TX -> PA3 RX), 115200
  *   USART6 -> 调试/其他,           PC6(TX)/PC7(RX), 115200
  */
 /* USER CODE END 0 */
@@ -49,7 +49,7 @@ void MX_UART4_Init(void)
 
   /* USER CODE END UART4_Init 1 */
   huart4.Instance = UART4;
-  huart4.Init.BaudRate = 921600;
+  huart4.Init.BaudRate = 460800;
   huart4.Init.WordLength = UART_WORDLENGTH_8B;
   huart4.Init.StopBits = UART_STOPBITS_1;
   huart4.Init.Parity = UART_PARITY_NONE;
@@ -166,13 +166,24 @@ void HAL_UART_MspInit(UART_HandleTypeDef* uartHandle)
     __HAL_RCC_UART4_CLK_ENABLE();
 
     __HAL_RCC_GPIOA_CLK_ENABLE();
+
     /**UART4 GPIO Configuration
-    PA0-WKUP     ------> UART4_TX
-    PA1     ------> UART4_RX
+    PA0-WKUP     ------> UART4_TX  (AF8)
+    PA1          ------> UART4_RX  (AF8)
     */
-    GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_1;
+
+    /* PA0 — TX: push-pull, no pull, AF8 */
+    GPIO_InitStruct.Pin = GPIO_PIN_0;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+    GPIO_InitStruct.Alternate = GPIO_AF8_UART4;
+    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+    /* PA1 — RX: push-pull, pull-up (UART idle = HIGH), AF8 */
+    GPIO_InitStruct.Pin = GPIO_PIN_1;
+    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+    GPIO_InitStruct.Pull = GPIO_PULLUP;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
     GPIO_InitStruct.Alternate = GPIO_AF8_UART4;
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
@@ -181,7 +192,8 @@ void HAL_UART_MspInit(UART_HandleTypeDef* uartHandle)
     HAL_NVIC_SetPriority(UART4_IRQn, 5, 0);
     HAL_NVIC_EnableIRQ(UART4_IRQn);
   /* USER CODE BEGIN UART4_MspInit 1 */
-
+    /* Disable PA0 WKUP function to prevent interference with UART4_TX */
+    HAL_PWR_DisableWakeUpPin(PWR_WAKEUP_PIN1);
   /* USER CODE END UART4_MspInit 1 */
   }
   else if(uartHandle->Instance==USART1)

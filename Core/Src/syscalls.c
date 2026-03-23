@@ -29,6 +29,9 @@
 #include <time.h>
 #include <sys/time.h>
 #include <sys/times.h>
+#include <unistd.h>
+
+#include "main.h"
 
 
 /* Variables */
@@ -164,6 +167,41 @@ int _fork(void)
 {
   errno = EAGAIN;
   return -1;
+}
+
+int _gettimeofday(struct timeval *tv, void *tzvp)
+{
+  (void)tzvp;
+  if (tv == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  uint32_t ms = HAL_GetTick();
+  tv->tv_sec = (time_t)(ms / 1000U);
+  tv->tv_usec = (suseconds_t)((ms % 1000U) * 1000U);
+  return 0;
+}
+
+int clock_gettime(clockid_t clk_id, struct timespec *tp)
+{
+  (void)clk_id;
+  if (tp == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  uint32_t ms = HAL_GetTick();
+  tp->tv_sec = (time_t)(ms / 1000U);
+  tp->tv_nsec = (long)((ms % 1000U) * 1000000U);
+  return 0;
+}
+
+int usleep(useconds_t usec)
+{
+  uint32_t ms = (uint32_t)((usec + 999U) / 1000U);
+  HAL_Delay(ms);
+  return 0;
 }
 
 int _execve(char *name, char **argv, char **env)

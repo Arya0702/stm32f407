@@ -34,35 +34,65 @@ enable_language(C ASM)
 # Create an executable object type
 add_executable(${CMAKE_PROJECT_NAME})
 
-# Add STM32CubeMX generated sources
-add_subdirectory(cmake/stm32cubemx)
+# STM32CubeMX HAL + FreeRTOS (must exist — see cmake/stm32cubemx/CMakeLists.txt)
+set(STM32CUBEMX_DIR "${CMAKE_CURRENT_SOURCE_DIR}/cmake/stm32cubemx")
+if(NOT EXISTS "${STM32CUBEMX_DIR}/CMakeLists.txt")
+  message(FATAL_ERROR
+    "Missing ${STM32CUBEMX_DIR}/CMakeLists.txt — CMake cannot configure. "
+    "Restore this file from the repo or regenerate the STM32CubeMX CMake export.")
+endif()
+add_subdirectory("${STM32CUBEMX_DIR}")
 
 # Link directories setup
 target_link_directories(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user defined library search paths
 )
 
-# Add sources to executable
+# Application sources (CubeMX Core/Src + micro-ROS)
+set(STARTUP_ASM "${CMAKE_SOURCE_DIR}/startup_stm32f407xx.s")
 target_sources(${CMAKE_PROJECT_NAME} PRIVATE
-    # Add user sources here
+    ${STARTUP_ASM}
+    Core/Src/main.c
+    Core/Src/gpio.c
+    Core/Src/freertos.c
+    Core/Src/adc.c
+    Core/Src/dma.c
+    Core/Src/tim.c
+    Core/Src/usart.c
+    Core/Src/odom_uart_rx.c
+    Core/Src/mq2_smoke.c
+    Core/Src/mq2_serial_test.c
+    Core/Src/stm32f4xx_it.c
+    Core/Src/stm32f4xx_hal_msp.c
+    Core/Src/stm32f4xx_hal_timebase_tim.c
+    Core/Src/system_stm32f4xx.c
+    Core/Src/sysmem.c
+    Core/Src/syscalls.c
+    Core/Src/microros_app.c
+    Core/Src/microros_transport_uart4.c
 )
+
+set_source_files_properties(${STARTUP_ASM} PROPERTIES LANGUAGE ASM)
 
 # Add include paths
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
-    # Add user defined include paths
     Core/Inc
+    microros/include
+    microros/include/microros_include
 )
 # Add project symbols (macros)
 
 target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE
-    # Add user defined symbols
+    STM32F407xx
+    USE_HAL_DRIVER
 )
 
 # Remove wrong libob.a library dependency when using cpp files
 list(REMOVE_ITEM CMAKE_C_IMPLICIT_LINK_LIBRARIES ob)
 
 # Add linked libraries
-target_link_libraries(${CMAKE_PROJECT_NAME}
+target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE
     stm32cubemx
-    # Add user defined libraries
+    m
+    ${CMAKE_CURRENT_SOURCE_DIR}/microros/include/libmicroros.a
 )
