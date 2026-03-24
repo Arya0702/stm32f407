@@ -55,6 +55,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     Core/Src/main.c
     Core/Src/gpio.c
     Core/Src/freertos.c
+    Core/Src/app_freertos_logic.c
     Core/Src/adc.c
     Core/Src/dma.c
     Core/Src/tim.c
