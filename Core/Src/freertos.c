@@ -50,35 +50,35 @@
 osThreadId_t defaultTaskHandle;
 const osThreadAttr_t defaultTask_attributes = {
   .name = "defaultTask",
-  .stack_size = 3000U * 4U,
-  .priority = (osPriority_t) osPriorityNormal,
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityRealtime,
 };
 /* Definitions for Smoke */
 osThreadId_t SmokeHandle;
 const osThreadAttr_t Smoke_attributes = {
   .name = "Smoke",
-  .stack_size = 256U * 4U,
-  .priority = (osPriority_t) osPriorityBelowNormal,
+  .stack_size = 256 * 4,
+  .priority = (osPriority_t) osPriorityAboveNormal,
 };
 /* Definitions for Slave */
 osThreadId_t SlaveHandle;
 const osThreadAttr_t Slave_attributes = {
   .name = "Slave",
-  .stack_size = 256U * 4U,
-  .priority = (osPriority_t) osPriorityBelowNormal,
+  .stack_size = 256 * 4,
+  .priority = (osPriority_t) osPriorityAboveNormal,
 };
 /* Definitions for Pwm */
 osThreadId_t PwmHandle;
 const osThreadAttr_t Pwm_attributes = {
   .name = "Pwm",
-  .stack_size = 256U * 4U,
-  .priority = (osPriority_t) osPriorityLow,
+  .stack_size = 256 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
 };
 /* Definitions for Water_Pump */
 osThreadId_t Water_PumpHandle;
 const osThreadAttr_t Water_Pump_attributes = {
   .name = "Water_Pump",
-  .stack_size = 256U * 4U,
+  .stack_size = 256 * 4,
   .priority = (osPriority_t) osPriorityLow,
 };
 /* Definitions for UART4_Protect */
@@ -105,12 +105,10 @@ void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
   * @param  None
   * @retval None
   */
-void MX_FREERTOS_Init(void)
-{
+void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
 
   /* USER CODE END Init */
-
   /* Create the mutex(es) */
   /* creation of UART4_Protect */
   UART4_ProtectHandle = osMutexNew(&UART4_Protect_attributes);
@@ -154,6 +152,7 @@ void MX_FREERTOS_Init(void)
   /* USER CODE BEGIN RTOS_EVENTS */
   /* add events, ... */
   /* USER CODE END RTOS_EVENTS */
+
 }
 
 /* USER CODE BEGIN Header_StartDefaultTask */
@@ -253,3 +252,4 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
   AppTasks_OnExti(GPIO_Pin);
 }
 /* USER CODE END Application */
+

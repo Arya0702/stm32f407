@@ -7,7 +7,6 @@
 #include "tim.h"
 
 volatile uint8_t pump_state = 0U;
-volatile int rx_ready = 0;
 volatile int alert = 0;
 
 void AppTasks_StartDefault(void *argument)
@@ -57,8 +56,10 @@ void AppTasks_PumpStep(void)
 {
   if (pump_state) {
     HAL_GPIO_WritePin(GPIOD, GPIO_PIN_1, GPIO_PIN_SET);
+    HAL_GPIO_WritePin(GPIOD, GPIO_PIN_2, GPIO_PIN_SET);
   } else {
     HAL_GPIO_WritePin(GPIOD, GPIO_PIN_1, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(GPIOD, GPIO_PIN_2, GPIO_PIN_RESET);
   }
 }
 
